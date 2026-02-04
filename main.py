@@ -145,19 +145,6 @@ if 'editing_id' not in st.session_state:
 if 'delete_confirm_id' not in st.session_state:
     st.session_state.delete_confirm_id = None
 
-# Sample data initialization only if no data exists at all
-if not st.session_state.transactions and not os.path.exists(DATA_FILE):
-    st.session_state.transactions = [
-        {"id": 1, "date": "2026-02-01", "category": "Salary", "amount": 5000, "type": "Income", "description": "Monthly Salary"},
-        {"id": 2, "date": "2026-02-02", "category": "Rent", "amount": 1200, "type": "Expense", "description": "Apartment Rent"},
-        {"id": 3, "date": "2026-02-03", "category": "Groceries", "amount": 150, "type": "Expense", "description": "Weekly Shopping"},
-        {"id": 4, "date": "2026-02-04", "category": "Freelance", "amount": 800, "type": "Income", "description": "Design Project"},
-        {"id": 5, "date": "2026-02-05", "category": "Entertainment", "amount": 75, "type": "Expense", "description": "Movie Night"},
-        {"id": 6, "date": "2026-02-06", "category": "Transport", "amount": 120, "type": "Expense", "description": "Gas & Parking"},
-        {"id": 7, "date": "2026-02-07", "category": "Utilities", "amount": 200, "type": "Expense", "description": "Electric & Internet"}
-    ]
-    save_data()
-
 def get_next_id():
     """Get next available transaction ID"""
     if not st.session_state.transactions:

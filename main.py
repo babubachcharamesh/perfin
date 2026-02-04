@@ -104,20 +104,49 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
-if 'transactions' not in st.session_state:
-    st.session_state.transactions = []
-if 'budgets' not in st.session_state:
-    st.session_state.budgets = {}
-if 'goals' not in st.session_state:
-    st.session_state.goals = []
+import os
+
+# Data file path
+DATA_FILE = "finance_data.json"
+
+def load_data():
+    """Load data from JSON file"""
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            st.error(f"Error loading data: {e}")
+    return {"transactions": [], "budgets": {}, "goals": []}
+
+def save_data():
+    """Save current state to JSON file"""
+    data = {
+        "transactions": st.session_state.transactions,
+        "budgets": st.session_state.budgets,
+        "goals": st.session_state.goals
+    }
+    try:
+        with open(DATA_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        st.error(f"Error saving data: {e}")
+
+# Initialize session state from file
+if 'data_loaded' not in st.session_state:
+    saved_data = load_data()
+    st.session_state.transactions = saved_data.get("transactions", [])
+    st.session_state.budgets = saved_data.get("budgets", {})
+    st.session_state.goals = saved_data.get("goals", [])
+    st.session_state.data_loaded = True
+
 if 'editing_id' not in st.session_state:
     st.session_state.editing_id = None
 if 'delete_confirm_id' not in st.session_state:
     st.session_state.delete_confirm_id = None
 
-# Sample data initialization
-if not st.session_state.transactions:
+# Sample data initialization only if no data exists at all
+if not st.session_state.transactions and not os.path.exists(DATA_FILE):
     st.session_state.transactions = [
         {"id": 1, "date": "2026-02-01", "category": "Salary", "amount": 5000, "type": "Income", "description": "Monthly Salary"},
         {"id": 2, "date": "2026-02-02", "category": "Rent", "amount": 1200, "type": "Expense", "description": "Apartment Rent"},
@@ -127,6 +156,7 @@ if not st.session_state.transactions:
         {"id": 6, "date": "2026-02-06", "category": "Transport", "amount": 120, "type": "Expense", "description": "Gas & Parking"},
         {"id": 7, "date": "2026-02-07", "category": "Utilities", "amount": 200, "type": "Expense", "description": "Electric & Internet"}
     ]
+    save_data()
 
 def get_next_id():
     """Get next available transaction ID"""
@@ -140,6 +170,7 @@ def delete_transaction(transaction_id):
         t for t in st.session_state.transactions if t['id'] != transaction_id
     ]
     st.session_state.delete_confirm_id = None
+    save_data()
     st.success("✅ Transaction deleted successfully!")
     st.rerun()
 
@@ -148,6 +179,7 @@ def update_transaction(transaction_id, updated_data):
     for i, t in enumerate(st.session_state.transactions):
         if t['id'] == transaction_id:
             st.session_state.transactions[i].update(updated_data)
+            save_data()
             break
     st.session_state.editing_id = None
     st.success("✅ Transaction updated successfully!")
@@ -334,6 +366,7 @@ elif page == "💳 Transactions":
                     "description": description
                 }
                 st.session_state.transactions.append(new_transaction)
+                save_data()
                 st.success("✅ Transaction added successfully!")
                 st.balloons()
     
@@ -514,6 +547,7 @@ elif page == "💳 Transactions":
                             t for t in st.session_state.transactions 
                             if t['id'] not in to_delete
                         ]
+                        save_data()
                         st.success(f"✅ Deleted {len(to_delete)} transactions!")
                         st.rerun()
                 with col2:
@@ -528,6 +562,7 @@ elif page == "💳 Transactions":
                 if confirm_text == "DELETE ALL":
                     if st.button("🗑️ DELETE EVERYTHING", type="secondary"):
                         st.session_state.transactions = []
+                        save_data()
                         st.success("All transactions deleted!")
                         st.rerun()
         else:
@@ -630,6 +665,7 @@ elif page == "🎯 Budget & Goals":
                     key=f"budget_{category}"
                 )
                 st.session_state.budgets[category] = new_budget
+                save_data()
                 
                 # Calculate current spending
                 current_spending = sum(
@@ -669,6 +705,7 @@ elif page == "🎯 Budget & Goals":
                     "deadline": deadline.strftime("%Y-%m-%d"),
                     "created": datetime.now().strftime("%Y-%m-%d")
                 })
+                save_data()
                 st.success(f"Goal '{goal_name}' added!")
         
         # Display Goals
@@ -697,6 +734,7 @@ elif page == "🎯 Budget & Goals":
                         if add_amount > 0:
                             if st.button("💰", key=f"btn_goal_{i}"):
                                 st.session_state.goals[i]['current'] += add_amount
+                                save_data()
                                 st.rerun()
                     
                     st.markdown("---")
@@ -732,6 +770,7 @@ elif page == "⚙️ Settings":
             st.session_state.transactions = data.get('transactions', [])
             st.session_state.budgets = data.get('budgets', {})
             st.session_state.goals = data.get('goals', [])
+            save_data()
             st.success("✅ Data restored successfully!")
             st.rerun()
     
@@ -745,6 +784,7 @@ elif page == "⚙️ Settings":
             st.session_state.transactions = []
             st.session_state.budgets = {}
             st.session_state.goals = []
+            save_data()
             st.success("All data cleared!")
             st.rerun()
 

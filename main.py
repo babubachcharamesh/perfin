@@ -4,6 +4,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import json
+import os
+
+# Storage file path
+DATA_FILE = "finance_data.json"
 
 # Page configuration
 st.set_page_config(
@@ -144,6 +148,38 @@ if 'editing_id' not in st.session_state:
     st.session_state.editing_id = None
 if 'delete_confirm_id' not in st.session_state:
     st.session_state.delete_confirm_id = None
+if 'data_loaded' not in st.session_state:
+    st.session_state.data_loaded = False
+
+def save_data():
+    """Save all data to local JSON file"""
+    data = {
+        "transactions": st.session_state.transactions,
+        "budgets": st.session_state.budgets,
+        "goals": st.session_state.goals
+    }
+    with open(DATA_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def load_data():
+    """Load data from local JSON file"""
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, 'r') as f:
+                data = json.load(f)
+                st.session_state.transactions = data.get('transactions', [])
+                st.session_state.budgets = data.get('budgets', {})
+                st.session_state.goals = data.get('goals', [])
+                return True
+        except Exception as e:
+            st.error(f"Error loading data: {e}")
+    return False
+
+# Load data on startup
+if not st.session_state.data_loaded:
+    if load_data():
+        st.toast("✅ Data loaded from storage")
+    st.session_state.data_loaded = True
 
 def get_next_id():
     """Get next available transaction ID"""
@@ -169,6 +205,7 @@ def update_transaction(transaction_id, updated_data):
             save_data()
             break
     st.session_state.editing_id = None
+    save_data()
     st.success("✅ Transaction updated successfully!")
     st.rerun()
 
@@ -653,6 +690,12 @@ elif page == "🎯 Budget & Goals":
                 )
                 st.session_state.budgets[category] = new_budget
                 save_data()
+                
+                # Auto-save budget changes if they are different from session state
+                # Note: streamlit's widget handling means we might want to trigger save here
+                if st.session_state.get(f"prev_budget_{category}") != new_budget:
+                    st.session_state[f"prev_budget_{category}"] = new_budget
+                    save_data()
                 
                 # Calculate current spending
                 current_spending = sum(

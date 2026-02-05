@@ -150,6 +150,18 @@ if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 if 'username' not in st.session_state:
     st.session_state.username = None
+if 'transactions' not in st.session_state:
+    st.session_state.transactions = []
+if 'budgets' not in st.session_state:
+    st.session_state.budgets = {}
+if 'goals' not in st.session_state:
+    st.session_state.goals = []
+if 'data_loaded' not in st.session_state:
+    st.session_state.data_loaded = False
+if 'editing_id' not in st.session_state:
+    st.session_state.editing_id = None
+if 'delete_confirm_id' not in st.session_state:
+    st.session_state.delete_confirm_id = None
 
 def get_user_data_file():
     if st.session_state.username:
@@ -193,16 +205,9 @@ def load_data():
     return False
 
 # Initialize session state from file (after authentication)
-if st.session_state.authenticated and 'data_loaded' not in st.session_state:
+if st.session_state.authenticated and not st.session_state.data_loaded:
     load_data()
     st.session_state.data_loaded = True
-
-if 'editing_id' not in st.session_state:
-    st.session_state.editing_id = None
-if 'delete_confirm_id' not in st.session_state:
-    st.session_state.delete_confirm_id = None
-if 'data_loaded' not in st.session_state:
-    st.session_state.data_loaded = False
 
 def login_register_page():
     st.markdown('<div class="main-header">Welcome to Finance Manager</div>', unsafe_allow_html=True)
